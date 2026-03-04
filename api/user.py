@@ -3,15 +3,18 @@
 """
 from db import db_handle
 from lib import common
+import hashlib
 
 
 def register_info(phone_number, name, password):
     """处理用户注册逻辑"""
+    # 密码加密
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
     # 生成用户数据
     user_info = {
         "name": name,
         "phone_number": phone_number,
-        "password": password,
+        "password": hashed_password,
         'balance': 0,
         'bill': [],
     }
@@ -29,7 +32,8 @@ def login_info(phone_number, password):
     user_data = db_handle.select_data(phone_number)
     if user_data:
         # 判断密码是否一致
-        if password == user_data['password']:
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        if hashed_password == user_data['password']:
             msg = common.nowtime()
             return 1, f'{msg}好，{user_data["name"]}'
         return 2, '密码错误，请重新输入'
@@ -45,11 +49,14 @@ def check_money_info(phone_number):
 
 def change_password_info(phone_number, old_password, new_password):
     """处理更改密码逻辑"""
+    # 密码加密
+    hashed_old_password = hashlib.sha256(old_password.encode()).hexdigest()
+    hashed_new_password = hashlib.sha256(new_password.encode()).hexdigest()
     # 原密码是否正确
     user_data = db_handle.select_data(phone_number)
-    if old_password == user_data['password']:
+    if hashed_old_password == user_data['password']:
         # 更改密码
-        user_data['password'] = new_password
+        user_data['password'] = hashed_new_password
         # 保存更改数据
         db_handle.save_data(user_data)
         return True
